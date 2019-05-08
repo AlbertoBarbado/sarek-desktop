@@ -18,6 +18,8 @@ import pandas as pd
 from config import PATH_USER, JOBLIB_PARAMS
 from tools import file_presistance
 from joblib import Parallel, delayed
+from nltk.corpus import stopwords
+
 
 #from query_processing import embedding_query_stanza
 
@@ -100,14 +102,14 @@ except:
 #########
 
 try:
-    del DCT_SONNETS[2543]
+    del DCT_SONNETS["2543"]
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_WORD2VEC.drop(2543, axis=0, inplace=True)
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_BERT.drop(2543, axis=0, inplace=True)    
 except:
     pass
 
 try:
-    del DCT_SONNETS[300]
+    del DCT_SONNETS["300"]
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_WORD2VEC.drop(300, axis=0, inplace=True)
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_BERT.drop(300, axis=0, inplace=True)
 except:
@@ -229,6 +231,22 @@ def embedding_query_stanza(query_text, composition_type, metric, type_embedding,
         # Using BERT embedding library
         bert_embedding = BertEmbedding(model='bert_12_768_12', dataset_name='wiki_multilingual')
         result = bert_embedding(list_words)
+        
+        # Filter stopwords
+        ref_words = [w[0][0] for w in result]
+        # Upper case to lowercase
+        ref_words = [w.lower() for w in ref_words]
+        # Remove stopwords
+        ref_words = [w for w in ref_words if w not in stopwords.words('spanish')]
+        # Remove non alphanumeric characters
+        ref_words = [w for w in ref_words if w.isalpha()]
+        # Filter embeddings
+        result_aux = [x for x in result if x[0][0] in ref_words]
+        
+        # Check that is not empty
+        if len(result_aux)>0:
+            result = result_aux
+        
         df_features = pd.DataFrame([x[1][0] for x in result])
         
         dct_embedding_all = DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_BERT
