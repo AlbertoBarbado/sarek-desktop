@@ -18,8 +18,6 @@ import pandas as pd
 from config import PATH_USER, JOBLIB_PARAMS
 from tools import file_presistance
 from joblib import Parallel, delayed
-from nltk.corpus import stopwords
-
 
 #from query_processing import embedding_query_stanza
 
@@ -102,14 +100,14 @@ except:
 #########
 
 try:
-    del DCT_SONNETS["2543"]
+    del DCT_SONNETS[2543]
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_WORD2VEC.drop(2543, axis=0, inplace=True)
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_BERT.drop(2543, axis=0, inplace=True)    
 except:
     pass
 
 try:
-    del DCT_SONNETS["300"]
+    del DCT_SONNETS[300]
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_WORD2VEC.drop(300, axis=0, inplace=True)
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_BERT.drop(300, axis=0, inplace=True)
 except:
@@ -231,22 +229,6 @@ def embedding_query_stanza(query_text, composition_type, metric, type_embedding,
         # Using BERT embedding library
         bert_embedding = BertEmbedding(model='bert_12_768_12', dataset_name='wiki_multilingual')
         result = bert_embedding(list_words)
-        
-        # Filter stopwords
-        ref_words = [w[0][0] for w in result]
-        # Upper case to lowercase
-        ref_words = [w.lower() for w in ref_words]
-        # Remove stopwords
-        ref_words = [w for w in ref_words if w not in stopwords.words('spanish')]
-        # Remove non alphanumeric characters
-        ref_words = [w for w in ref_words if w.isalpha()]
-        # Filter embeddings
-        result_aux = [x for x in result if x[0][0] in ref_words]
-        
-        # Check that is not empty
-        if len(result_aux)>0:
-            result = result_aux
-        
         df_features = pd.DataFrame([x[1][0] for x in result])
         
         dct_embedding_all = DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_BERT
@@ -335,7 +317,7 @@ def embedding_query_stanza(query_text, composition_type, metric, type_embedding,
                     print("*"*50)
                     print("")
         
-    return DCT_SONNETS[key_final]
+    return key_final, DCT_SONNETS[key_final]
     
 
 ###############################################################################
@@ -741,6 +723,8 @@ class SonnetRecommender(tk.Frame):
         self.choice = StringVar(value = "1")
         self.sonnet1_type = StringVar(value = "1")
         self.sonnet2_type = StringVar(value = "1")
+        self.key1 = StringVar(value = "1")
+        self.key2 = StringVar(value = "1")
 
         ##########################################
         # Layout
@@ -806,6 +790,8 @@ class SonnetRecommender(tk.Frame):
             self.choice.set("1")
             self.sonnet1_type.set("1")
             self.sonnet2_type.set("1")
+            self.key1.set("1")
+            self.key2.set("1")
             # Go to first page
             controller.show_frame("StartPage")
 
@@ -844,7 +830,7 @@ class SonnetRecommender(tk.Frame):
             
             def query_result(args):
                 print("prueba")
-                mensaje = embedding_query_stanza(query_text = args['query_text'], 
+                key_final, mensaje = embedding_query_stanza(query_text = args['query_text'], 
                                        composition_type= args['composition_type'], 
                                        metric=args['metric'], 
                                        type_embedding=args['type_embedding'], 
@@ -853,7 +839,7 @@ class SonnetRecommender(tk.Frame):
                 mensaje = mensaje['text'] + '\n' + '*'*10 + '\n Título: ' +  mensaje['title'] + '\n Autor: ' +  mensaje['author'] + '\n Año: ' +  mensaje['year']
                 print(args['type_embedding'])
                 
-                return args['type_embedding'], mensaje
+                return key_final, args['type_embedding'], mensaje
                 
                 
             arg_instances = [{'query_text':dct_interaction['query_text'], 'composition_type':"joint" , 'metric':"cosine", 'type_embedding':'bert', 'use_prefilter':False,'log':False},
@@ -865,14 +851,16 @@ class SonnetRecommender(tk.Frame):
                 results.append(query_result(args))
                 
 #            self.label.config(text="Buscando sonetos personalizados para ti...   ")
-            
+            print(results)
             list_sonnet_types = []
-            for type_embedding, message in results:
+            for key, type_embedding, message in results:
                 list_sonnet_types.append(type_embedding)
                 if type_embedding == 'bert':
                     mensajeB = message
+                    key_bert = key
                 else:
                     mensajeA = message
+                    key_w2v = key
 
 #            mensajeA = "Soneto A \n\n -------- \n Author: XXXXXX"
 #            mensajeB = "Soneto B \n\n -------- \n Author: XXXXXX"
@@ -889,6 +877,8 @@ class SonnetRecommender(tk.Frame):
                 self.text_box_2.config(state=NORMAL)
                 self.text_box_2.insert(1.0, mensajeB)
                 self.sonnet2_type.set("bert")
+                self.key1.set(key_w2v)
+                self.key2.set(key_bert)
             else:
                 self.text_box_1.config(state=NORMAL)
                 self.text_box_1.insert(1.0, mensajeB) # insert this text from position 1
@@ -896,6 +886,8 @@ class SonnetRecommender(tk.Frame):
                 self.text_box_2.config(state=NORMAL)
                 self.text_box_2.insert(1.0, mensajeA)
                 self.sonnet2_type.set("word2vec")
+                self.key1.set(key_bert)
+                self.key2.set(key_w2v)
             
             # Make selection buttons clickable
             self.button_sel1.config(state=NORMAL)
@@ -912,8 +904,10 @@ class SonnetRecommender(tk.Frame):
             try:
                 dct_interaction = file_presistance(PATH_USER + '/' + file_name + '.json', "json", None, "load")
                 dct_interaction['sonnet_selected'] = str(self.sonnet1_type.get())
+                dct_interaction['id_sonnet'] = str(self.key1.get())
             except:
-                dct_interaction = {'sonnet_selected':str(self.sonnet1_type.get())}
+                dct_interaction = {'sonnet_selected':str(self.sonnet1_type.get()),
+                                   'id_sonnet':str(self.key1.get())}
                 
             # Save results  
             file_presistance(PATH_USER + '/' + file_name + '.json', "json", dct_interaction, "save")
@@ -940,8 +934,10 @@ class SonnetRecommender(tk.Frame):
             try:
                 dct_interaction = file_presistance(PATH_USER + '/' + file_name + '.json', "json", None, "load")
                 dct_interaction['sonnet_selected'] = str(self.sonnet2_type.get())
+                dct_interaction['id_sonnet'] = str(self.key2.get())
             except:
-                dct_interaction = {'sonnet_selected':str(self.sonnet2_type.get())}
+                dct_interaction = {'sonnet_selected':str(self.sonnet2_type.get()),
+                                   'id_sonnet':str(self.key2.get())}
                 
             # Save results  
             file_presistance(PATH_USER + '/' + file_name + '.json', "json", dct_interaction, "save")
