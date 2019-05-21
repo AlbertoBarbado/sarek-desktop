@@ -29,7 +29,7 @@ Then download the datasets needed for the application from:
 ```
 https://unedo365-my.sharepoint.com/:f:/g/personal/abarbado5_alumno_uned_es/Eh6rYEkgXRdIsKgXjvv5NXoBFHMq1HNkayFHmGk_RY-_zg?e=PaZPoG
 ```
-And move all files to the **datasets** folder before executing the application.
+And move all files to the **datasets** folder before executing the application (NOTE: you need to move the contents of the file sarek-datasets after unzipping it; that's it, the individual files such as dct_sonnets_affective.json, SpanishAoA.csv...) 
 
 Then execute the interface_main.py file
 
