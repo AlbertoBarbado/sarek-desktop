@@ -44,5 +44,6 @@ And then, after some time, a pop up window will appear where you can interact wi
 * As it's said, it takes a while for the program to start (around 2-5 min) 
 * When the sonnets are loaded in the screen you can scroll down in anyone of them if the mouse is over the text of that specific sonnet. There may be some minor bugs that include not deleting the old contents
 from the previous query results after that retrievals; for that cases simply scroll to the top sonnet available and that'd be the result of the last query.
+* The user_results will contain all the user's interactions with the system. DO NOT delete it so later it will be possible to analyze the user's interactions.
 
 Enjoy!
