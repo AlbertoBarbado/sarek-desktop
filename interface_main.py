@@ -100,14 +100,14 @@ except:
 #########
 
 try:
-    del DCT_SONNETS[2543]
+    del DCT_SONNETS[str(2543)]
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_WORD2VEC.drop(2543, axis=0, inplace=True)
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_BERT.drop(2543, axis=0, inplace=True)    
 except:
     pass
 
 try:
-    del DCT_SONNETS[300]
+    del DCT_SONNETS[str(300)]
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_WORD2VEC.drop(300, axis=0, inplace=True)
     DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_BERT.drop(300, axis=0, inplace=True)
 except:
