@@ -294,8 +294,17 @@ def embedding_query_stanza(query_text, composition_type, metric, type_embedding,
         # Using BERT embedding library
         bert_embedding = BertEmbedding(model='bert_12_768_12', dataset_name='wiki_multilingual')
         result = bert_embedding(list_words)
-        df_features = pd.DataFrame([x[1][0] for x in result])
+        # Remove stopwords
+        list_words = [w for w in list_words if w not in stopwords.words('spanish')]
+        # Eliminate embeddings for stopwords
+        results_aux = []
+        for register in result:
+            print(register[0][0])
+            if register[0][0] not in stopwords.words('spanish'):
+                results_aux.append(register)
+        result = results_aux
         
+        df_features = pd.DataFrame([x[1][0] for x in result])
         dct_embedding_all = DCT_COMPOSITION_EMBEDDING_JOINT_STANZA_BERT
 
     elif type_embedding == "word2vec":
